@@ -62,5 +62,5 @@ def validate_runtime(*, production: bool | None = None) -> None:
         raise RuntimeError("ADMIN_OWNER_ID must be included in ADMIN_IDS")
     if not ADMIN_PASSWORD and not ADMIN_PASSWORD_HASH:
         raise RuntimeError("Set ADMIN_PASSWORD_HASH (recommended) or ADMIN_PASSWORD")
-    if production and (not WEBHOOK_URL or not WEBHOOK_SECRET):
-        raise RuntimeError("Production requires WEBHOOK_URL and WEBHOOK_SECRET")
+    if production and not WEBHOOK_URL:
+        raise RuntimeError("Production requires WEBHOOK_URL")
