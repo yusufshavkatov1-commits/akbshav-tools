@@ -25,6 +25,8 @@ def _int_set(name: str) -> set[int]:
 USER_BOT_TOKEN = _env("USER_BOT_TOKEN")
 ADMIN_BOT_TOKEN = _env("ADMIN_BOT_TOKEN")
 DATABASE_URL = _env("DATABASE_URL")
+# asyncpg does not accept PostgreSQL's sslmode keyword.
+DATABASE_URL = DATABASE_URL.replace("sslmode=", "ssl=")
 REQUIRED_CHANNEL = _env("REQUIRED_CHANNEL", "@akbshav_channel")
 BOT_USERNAME = _env("BOT_USERNAME", "AKBSHAVTOOLS_bot").lstrip("@")
 ADMIN_IDS = _int_set("ADMIN_IDS")
