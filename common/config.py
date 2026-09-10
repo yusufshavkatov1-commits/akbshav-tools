@@ -37,7 +37,6 @@ ADMIN_PASSWORD = _env("ADMIN_PASSWORD")
 ADMIN_PASSWORD_HASH = _env("ADMIN_PASSWORD_HASH")
 COMMAND_PREFIX = _env("COMMAND_PREFIX", ".")[:1] or "."
 SESSION_HOURS = int(_env("ADMIN_SESSION_HOURS", "12"))
-# Backward-compatible name used by admin_bot.
 ADMIN_SESSION_HOURS = SESSION_HOURS
 MAX_REPEATS = int(_env("MAX_REPEATS", "20"))
 MAX_WORDS = int(_env("MAX_WORDS", "30"))
