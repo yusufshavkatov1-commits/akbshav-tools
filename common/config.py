@@ -55,7 +55,7 @@ def _normalize_database_url(url: str) -> str:
 
 DATABASE_URL = _normalize_database_url(_env("DATABASE_URL"))
 REQUIRED_CHANNEL = _env("REQUIRED_CHANNEL", "@akbshav_channel")
-BOT_USERNAME = _env("BOT_USERNAME", "AKBSHAVTOOLS_bot").lstrip("@")
+BOT_USERNAME = _env("BOT_USERNAME", "akbshav_tools_bot").lstrip("@")
 ADMIN_IDS = _int_set("ADMIN_IDS")
 ADMIN_OWNER_ID = int(_env("ADMIN_OWNER_ID", str(next(iter(sorted(ADMIN_IDS)), 0)))) if ADMIN_IDS else 0
 APP_VERSION = _env("APP_VERSION", "3.0.0")

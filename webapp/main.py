@@ -47,11 +47,31 @@ async def lifespan(app: FastAPI):
             allowed_updates=["message", "callback_query", "business_connection", "business_message", "edited_business_message", "deleted_business_messages"],
             drop_pending_updates=False,
         )
+        user_webhook_url = f"{WEBHOOK_URL}/webhook/user"
+        admin_webhook_url = f"{WEBHOOK_URL}/webhook/admin"
+        await user_app.bot.set_webhook(
+            user_webhook_url,
+            secret_token=WEBHOOK_SECRET,
+            allowed_updates=["message", "callback_query", "business_connection", "business_message", "edited_business_message", "deleted_business_messages"],
+            drop_pending_updates=False,
+        )
         await admin_app.bot.set_webhook(
-            f"{WEBHOOK_URL}/webhook/admin",
+            admin_webhook_url,
             secret_token=WEBHOOK_SECRET,
             allowed_updates=["message", "callback_query"],
             drop_pending_updates=False,
+        )
+        user_me = await user_app.bot.get_me()
+        admin_me = await admin_app.bot.get_me()
+        user_info = await user_app.bot.get_webhook_info()
+        admin_info = await admin_app.bot.get_webhook_info()
+        log.info(
+            "User bot configured: @%s | webhook=%s | pending=%s | last_error=%s",
+            user_me.username, user_info.url, user_info.pending_update_count, user_info.last_error_message or "none",
+        )
+        log.info(
+            "Admin bot configured: @%s | webhook=%s | pending=%s | last_error=%s",
+            admin_me.username, admin_info.url, admin_info.pending_update_count, admin_info.last_error_message or "none",
         )
         log.info("Telegram webhooks configured")
     try:
@@ -97,6 +117,7 @@ async def _handle_webhook(request: Request, application, secret: str | None):
     if secret and received != secret:
         raise HTTPException(status_code=403, detail="forbidden")
     try:
+        log.info("Telegram webhook received: path=%s", request.url.path)
         if int(request.headers.get("content-length", "0") or 0) > 2_000_000:
             raise HTTPException(status_code=413, detail="payload too large")
         payload = await request.json()
