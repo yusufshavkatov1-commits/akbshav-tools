@@ -10,9 +10,6 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from common.config import DATABASE_URL
 
-# Normalize PostgreSQL URL for asyncpg.
-DATABASE_URL = DATABASE_URL.replace("sslmode=", "ssl=")
-
 
 def sqlalchemy_database_url(url: str) -> str:
     """Convert a PostgreSQL URL to the SQLAlchemy asyncpg-compatible form.
@@ -36,6 +33,10 @@ def sqlalchemy_database_url(url: str) -> str:
         if key == "sslmode":
             if not ssl_present:
                 normalized.append(("ssl", value))
+                ssl_present = True
+        elif key == "channel_binding":
+            # asyncpg does not accept this libpq/Neon URL keyword.
+            continue
         else:
             normalized.append((key, value))
     return urlunsplit((scheme, parts.netloc, parts.path, urlencode(normalized), parts.fragment))

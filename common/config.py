@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -24,9 +25,35 @@ def _int_set(name: str) -> set[int]:
 
 USER_BOT_TOKEN = _env("USER_BOT_TOKEN")
 ADMIN_BOT_TOKEN = _env("ADMIN_BOT_TOKEN")
-DATABASE_URL = _env("DATABASE_URL")
-# asyncpg does not accept PostgreSQL's sslmode keyword.
-DATABASE_URL = DATABASE_URL.replace("sslmode=", "ssl=")
+def _normalize_database_url(url: str) -> str:
+    """Normalize libpq/Neon URL options for asyncpg and SQLAlchemy asyncpg."""
+    if not url:
+        return url
+    parts = urlsplit(url)
+    scheme = parts.scheme
+    if scheme == "postgres":
+        scheme = "postgresql"
+    query = parse_qsl(parts.query, keep_blank_values=True)
+    normalized: list[tuple[str, str]] = []
+    ssl_present = False
+    for key, value in query:
+        if key == "sslmode":
+            if not ssl_present:
+                normalized.append(("ssl", value))
+                ssl_present = True
+        elif key == "channel_binding":
+            # libpq/Neon option; asyncpg 0.30.0 in this runtime does not
+            # accept it as a connect() keyword. TLS is still enforced by ssl=require.
+            continue
+        elif key == "ssl":
+            normalized.append((key, value))
+            ssl_present = True
+        else:
+            normalized.append((key, value))
+    return urlunsplit((scheme, parts.netloc, parts.path, urlencode(normalized), parts.fragment))
+
+
+DATABASE_URL = _normalize_database_url(_env("DATABASE_URL"))
 REQUIRED_CHANNEL = _env("REQUIRED_CHANNEL", "@akbshav_channel")
 BOT_USERNAME = _env("BOT_USERNAME", "AKBSHAVTOOLS_bot").lstrip("@")
 ADMIN_IDS = _int_set("ADMIN_IDS")
@@ -62,5 +89,5 @@ def validate_runtime(*, production: bool | None = None) -> None:
         raise RuntimeError("ADMIN_OWNER_ID must be included in ADMIN_IDS")
     if not ADMIN_PASSWORD and not ADMIN_PASSWORD_HASH:
         raise RuntimeError("Set ADMIN_PASSWORD_HASH (recommended) or ADMIN_PASSWORD")
-    if production and not WEBHOOK_URL:
-        raise RuntimeError("Production requires WEBHOOK_URL")
+    if production and (not WEBHOOK_URL or not WEBHOOK_SECRET):
+        raise RuntimeError("Production requires WEBHOOK_URL and WEBHOOK_SECRET")
